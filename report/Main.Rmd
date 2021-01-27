@@ -13,14 +13,138 @@ knitr::opts_chunk$set(echo = FALSE,
 ```
 
 ```{r pkg}
-library(tidyverse)      # import, tidying, summary, plotting
+library(tidyverse)      # tidying data and summarizing
+library(GGally)
+library(dplyr)
+library(factoextra)   # for visualisation (check still using this)
+library(palmerpenguins)
+library(corrr)
+
 ```
 
-## Introduction
+# 1 Introduction
 
 [@R-tidyverse]
 
-## References
+# 2 Methods
+## 2.1 Data Description
+
+specify what all the columns stand for
+
+
+```{r data-import}
+# Creating file for the patient data
+file_patient <- "../data_raw/patient_data_raw.csv"
+# 
+patient <- read.csv(file_patient) %>%
+  janitor::clean_names()
+
+# Creating file for visit data
+file_visit <- "../data_raw/visit_data_raw.csv"
+#
+visit <- read.csv(file_visit) %>%
+  janitor::clean_names()
+
+```
+
+## 2.2 Data preparation and tidying
+
+```{r checking structure of datasets}
+str(visit)
+# 373 obs and 9 variables
+str(patient)
+# 150 obs and 5 variables
+```
+
+```{r data filtering}
+# mri_number and visit provide the same information (1-4)
+# removing column mri_number as it is irrelevant
+visit <- visit %>%
+  select(-mri_number)
+
+```
+
+```{r dataset combining}
+# combining both datasets and retaining all values
+data <- dplyr::full_join(patient, visit, by = "subject_id")
+```
+
+```{r removing rows with NA}
+data <- data %>% drop_na()
+str(data)
+```
+
+
+## 2.3 Visualisation using Principal Components Analysis
+``` {r pca prep}
+# Arranging data for ease of creating data frame for pca
+# All columns to be included in pca to be first, then other columns to follow
+data <- data %>%
+  select(subject_id, age, mmse, e_tiv, n_wbv, asf, everything())
+
+data_active <- data[1:354, 2:6]
+#checking 
+head(data_active[, 1:5])
+
+
+```
+## 2.4 Other method of analysis
+
+
+## 2.5 Another type of plot
+
+
+
+# 3 Results
+
+## 3.1 Principal Components Analysis
+``` {r carrying out PCA}
+pca <- data_active %>%
+  prcomp(scale. = TRUE)
+fviz_eig(pca)
+
+
+```
+
+
+```{r pca another graph}
+fviz_pca_var(pca,
+             col.var = "contrib", # Color by contributions to the PC
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+             )
+```
+```{r pca}
+pca3 <- data %>%
+  select(-group, -m_f, -subject_id) %>%
+  prcomp(scale. = TRUE)
+
+
+data_corr <- data %>%
+  dplyr::select(where(is.numeric)) %>%
+  correlate() %>%
+  rearrange()
+data_corr
+
+data %>%
+  select(group, where(is.numeric)) %>% 
+  GGally::ggpairs(aes(color = group),
+          columns = c("e_tiv", "educ", 
+                      "visit", "age",
+                      "cdr", "mmse",
+                      "n_wbv", "ses",
+                      "asf")) +
+  scale_colour_manual(values = c("darkorange","purple","cyan4")) +
+  scale_fill_manual(values = c("darkorange","purple","cyan4"))
+
+```
+
+## 3.2 
+
+## 3.3
+
+
+# References
 
 ```{r references, message=FALSE, warning=FALSE, include=FALSE}
 #creating a location for references and used packages in a  .bib file 
