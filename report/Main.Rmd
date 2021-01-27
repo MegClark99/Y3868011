@@ -14,22 +14,55 @@ knitr::opts_chunk$set(echo = FALSE,
 
 ```{r pkg}
 library(tidyverse)      # tidying data and summarizing
-library(GGally)
 library(dplyr)
-library(factoextra)   # for visualisation (check still using this)
-library(palmerpenguins)
-library(corrr)
+library(factoextra)     # for visualization (check still using this)
+library(GGally)         # PCA visualization
+library(palmerpenguins) # PCA visualization
+library(corrr)          # PCA 
 
 ```
 
 # 1 Introduction
+Dementia is a syndrome and includes many different neurodegenerative brain disorders, triggered by disease of the brain and causing loss of brain function [@Dening2015-pp]. 1 in 6 people over the age of 80 have dementia, which currently there is no cure for. Symptoms of dementia vary from physical to behavioral, including agitation and depression, as well as depleting memory and cognitive function [@Cerejeira2012-qr; @Shih2014-op]. 
+
+
 
 [@R-tidyverse]
 
 # 2 Methods
-## 2.1 Data Description
 
-specify what all the columns stand for
+[@R-rmarkdown]
+[@R-base]
+
+## 2.1 Data Description
+There are two separate CSV files: patient_data_raw.csv (../data_raw/patient_data_raw.csv) and visit_data_raw.csv (../data_raw/visit_data_raw.csv).
+
+Researchers collected this data with the aim of predicting dementia rating and grouping. The files include data on 150 subjects, 88 females and 62 males, all between the ages if 60 and 96 years old. Multiple records for the same subject indicates following visits at least a year on from the previous. For reference all subjects are right-handed. In the patient data, 
+
+Each row is a subject and data from their individual visit. There are two data files and the column descriptions are as follows:
+
+**Patient**
+* Subject ID
+* Group (demented, nondementded, converted)
+  + demented subjects are demented throughout the study, as for nondemented. Subjects who were nondemented on their first visit and demented on following visits are characterized as converted 
+* m_f indicates gender
+* educ states the years of education of the subject
+* ses is the 'socioeconomic status' as assessed by the Hollingshead Index of Social Position
+  + This is classified into categories from 1 (highest status) to 5 (lowest status)
+
+**Visit**
+* Subject ID
+* MRI number
+* Visit indicates the number if visit
+* Age
+* mmse is the Mini-Mental State Examination score (0 = worst to 30 = best)
+* cdr indicates the clinical dementia rating
+  + 0 = no dementia, 0.5 = very mild Alzheimers disease, 1 = mild Alzheimers disease, 2 = moderate Alzheimers disease
+* etiv is the estimated total intacranial volume measured in mm^{3}
+* nwbv is the normalized whole-brain volume, expressed as a percent of all voxels in the atlas-masked image that are labeled as gray or white matter by the automated tissue segmentation process
+* asf is the Atlas scaling factor (unitless). It is a computed scaling factor which transforms native-space brain and skull to the atlas target 
+
+
 
 
 ```{r data-import}
@@ -48,6 +81,7 @@ visit <- read.csv(file_visit) %>%
 ```
 
 ## 2.2 Data preparation and tidying
+talk about how the imgaing sessions was 373 but now 354 due to NA values 
 
 ```{r checking structure of datasets}
 str(visit)
@@ -148,10 +182,11 @@ data %>%
 
 ```{r references, message=FALSE, warning=FALSE, include=FALSE}
 #creating a location for references and used packages in a  .bib file 
-knitr::write_bib(c("tidyverse"), 
+knitr::write_bib(c("tidyverse", "Dening", "Cerejeira", "Shih", "Rmarkdown", "R-base"), 
                  width = 60, file = "references.bib")
 
 ```
+
 
 
 
