@@ -1,9 +1,10 @@
 ---
-title: "Title"
+title: "Analysis of demented and non demented subjects"
 author: "Examination number: Y3868011"
 output: html_document
 bibliography: reference.bib
 ---
+
 
 ```{r setup, include=FALSE}
 
@@ -12,27 +13,28 @@ knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE)
 ```
 
+
 ```{r pkg}
 library(tidyverse)      # tidying data and summarizing
-library(dplyr)
-library(factoextra)     # for visualization (check still using this)
+library(dplyr)          # tidying and merging datasets
+library(factoextra)     # for PCA visualization 
 library(GGally)         # PCA visualization
-library(palmerpenguins) # PCA visualization
-library(corrr)          # PCA 
-
+# library(palmerpenguins) # PCA visualization
+library(corrr)          # Correlation matrix 
+library(recipes)        # PCA preparation and visualization
+library(ggplot2)        # PCA plotting
+library(tidytext)       # PCA plotting
+library(formattable)    # Correlation matrix table
 ```
 
-# 1 Introduction
+
+# 1 Introduction 
 Dementia is a syndrome and includes many different neurodegenerative brain disorders, triggered by disease of the brain and causing loss of brain function [@Dening2015-pp]. 1 in 6 people over the age of 80 have dementia, which currently there is no cure for. Symptoms of dementia vary from physical to behavioral, including agitation and depression, as well as depleting memory and cognitive function [@Cerejeira2012-qr; @Shih2014-op]. 
 
+Analysis is done through *R* [@R-base] and presented using *R markdown* with a html output [@R-rmarkdown]. 
 
-
-[@R-tidyverse]
 
 # 2 Methods
-
-[@R-rmarkdown]
-[@R-base]
 
 ## 2.1 Data Description
 There are two separate CSV files: patient_data_raw.csv (../data_raw/patient_data_raw.csv) and visit_data_raw.csv (../data_raw/visit_data_raw.csv).
@@ -42,27 +44,27 @@ Researchers collected this data with the aim of predicting dementia rating and g
 Each row is a subject and data from their individual visit. There are two data files and the column descriptions are as follows:
 
 **Patient**
+
 * Subject ID
 * Group (demented, nondementded, converted)
-  + demented subjects are demented throughout the study, as for nondemented. Subjects who were nondemented on their first visit and demented on following visits are characterized as converted 
+    + demented subjects are demented throughout the study, as for nondemented. Subjects who were nondemented on their first visit and demented on following visits are characterized as converted 
 * m_f indicates gender
 * educ states the years of education of the subject
 * ses is the 'socioeconomic status' as assessed by the Hollingshead Index of Social Position
-  + This is classified into categories from 1 (highest status) to 5 (lowest status)
+    + This is classified into categories from 1 (highest status) to 5 (lowest status)
 
 **Visit**
+
 * Subject ID
 * MRI number
 * Visit indicates the number if visit
 * Age
 * mmse is the Mini-Mental State Examination score (0 = worst to 30 = best)
 * cdr indicates the clinical dementia rating
-  + 0 = no dementia, 0.5 = very mild Alzheimers disease, 1 = mild Alzheimers disease, 2 = moderate Alzheimers disease
+    + 0 = no dementia, 0.5 = very mild Alzheimers disease, 1 = mild Alzheimers disease, 2 = moderate Alzheimers disease
 * etiv is the estimated total intacranial volume measured in mm^{3}
 * nwbv is the normalized whole-brain volume, expressed as a percent of all voxels in the atlas-masked image that are labeled as gray or white matter by the automated tissue segmentation process
 * asf is the Atlas scaling factor (unitless). It is a computed scaling factor which transforms native-space brain and skull to the atlas target 
-
-
 
 
 ```{r data-import}
@@ -77,67 +79,171 @@ file_visit <- "../data_raw/visit_data_raw.csv"
 #
 visit <- read.csv(file_visit) %>%
   janitor::clean_names()
-
 ```
 
-## 2.2 Data preparation and tidying
-talk about how the imgaing sessions was 373 but now 354 due to NA values 
 
-```{r checking structure of datasets}
+## 2.2 Data preparation and tidying
+The raw data was imported into R [@R-base] where it was tidied, filtered using the *tidyverse* package [@R-tidyverse], and combined using the *dplyr* package [@R-dplyr]. Data from the 'visit' data set was filtered out for `mri_numer` as it held the same information as the `visit` column, which was preferred to be the kept column as it is numerical so posed as a better variable for future analysis through pca and other visualisations. 
+
+
+```{r checking structure of datasets, include = FALSE}
 str(visit)
 # 373 obs and 9 variables
 str(patient)
 # 150 obs and 5 variables
 ```
 
+
 ```{r data filtering}
 # mri_number and visit provide the same information (1-4)
 # removing column mri_number as it is irrelevant
 visit <- visit %>%
   select(-mri_number)
-
 ```
+
 
 ```{r dataset combining}
 # combining both datasets and retaining all values
 data <- dplyr::full_join(patient, visit, by = "subject_id")
 ```
 
-```{r removing rows with NA}
-data <- data %>% drop_na()
-str(data)
+
+```{r exporting modified data}
+# saving 'data' as a csv in the data_processed file
+write.csv(data, file = "../data_processed/combined_data.csv", row.names = FALSE)
 ```
 
 
-## 2.3 Visualisation using Principal Components Analysis
-``` {r pca prep}
-# Arranging data for ease of creating data frame for pca
-# All columns to be included in pca to be first, then other columns to follow
+## 2.3 Visualisation using Principal Components Analysis (PCA)
+Principal Component Analysis was done on this data to allow visualization of the ...
+To ensure proper running of the PCA to run, all NAs were removed from the data using the pipe operator `%>%` and predictors were centered and scaled. Removal of NA values meant the data was reduced from 373 to 354 imaging sessions. Following this, the *recipe* package was used [@Recipes] to prepare the data for the PCA, this included specifying the non-numeric columns that are to be excluded from the PCA, which was assigned to a new data set `data_recipe`. Data was then tidied using the package *tidytext* [@Tidytext] into `data_pca`, where the `value` column indicates the linear combination of weights for each variable contributing to that component, a tidier output than using the `stats::prcomp()` factor. 
+
+Another data set `data_active` was created that excluded all the supplementtary variables, both quantitative ans qualitative for a scree plot and a graph of the variables. 
+Plotting required the packages *factoextra*, *GGally* and *ggplot2* [@ggplot2; @factoextra; @GGally].
+
+``` {r pca prep, include = FALSE}
+# removing all rows with NAs present in the data frame
+data <- data %>% drop_na()
+
+data_recipe <-
+  recipe(~., data = data) %>% 
+  update_role(group, m_f, subject_id, new_role = "id") %>% 
+  step_naomit(all_predictors()) %>% 
+  step_normalize(all_predictors()) %>%
+  step_pca(all_predictors(), id = "pca") %>% 
+  prep()
+
+data_pca <- 
+  data_recipe %>% 
+  tidy(id = "pca") 
+
+data_pca
+```
+
+```{r testing}
+# get pca loadings into wider format
+pca_wider <- data_pca %>% 
+  tidyr::pivot_wider(names_from = component, id_cols = terms)
+
+# define arrow style
+arrow_style <- arrow(length = unit(.05, "inches"),
+                     type = "closed")
+
+
+pca_plot <-
+  juice(data_recipe) %>%
+  ggplot(aes(PC1, PC2)) +
+  geom_point(aes(color = group, shape = group), 
+             alpha = 0.8, 
+             size = 2) +
+  scale_colour_manual(values = c("#b6dfe2","#0A537D","grey")) 
+
+
+pca_plot +
+  geom_segment(data = pca_wider,
+               aes(xend = PC1, yend = PC2), 
+               x = 0, 
+               y = 0) + 
+  geom_text(data = pca_wider,
+            aes(x = PC1, y = PC2, label = terms), 
+            hjust = 0, 
+            vjust = 1,
+            size = 3, 
+            color = 'black') 
+```
+
+```{r summary stats of above}
+pca_plot %+% 
+  aes(PC2, PC3) +
+  geom_segment(data = pca_wider,
+               aes(xend = PC2, yend = PC3), 
+               x = 0, 
+               y = 0) + 
+  geom_text(data = pca_wider,
+            aes(x = PC2, y = PC3, label = terms), 
+            hjust = 0, 
+            vjust = 1,
+            size = 3, 
+            color = 'black') 
+```
+
+
+```{r pca prep 2, include = FALSE}
+# For the scree plot we want to only have the active quantitative variables, to do this I created a new subset called data_active
+# Arranging data for ease of creating new data frame 
+# All columns to be included in data_active to be first, then other columns to follow
 data <- data %>%
   select(subject_id, age, mmse, e_tiv, n_wbv, asf, everything())
-
+# Creating the new subset
 data_active <- data[1:354, 2:6]
-#checking 
+#checking the data 
 head(data_active[, 1:5])
-
-
 ```
-## 2.4 Other method of analysis
+
+```{r exporting modified data 2}
+# saving 'data_active' as a csv in the data_processed file
+write.csv(data_active, file = "../data_processed/active_data.csv", row.names = FALSE)
+write.csv(data_pca, file = "../data_processed/pca_data.csv", row.names = FALSE)
+```
 
 
-## 2.5 Another type of plot
+## 2.4 Preparing for the correlation matrix
+Correlation matrices are used...
+The package *corrr* was used to...
+
+The data contains numeric measurements that are correlated. Using the *corrr* package and the corrr::correlate() function I can analyze correlation between variables. To prepare for this I created a new data set only including the demented subjects to test if there is 
+
+## 2.5 Pairwise plot matrix 
+Using the *GGally* package [@GGally] and the GGally::ggpairs() function
 
 
 
 # 3 Results
 
 ## 3.1 Principal Components Analysis
+The first graph used the active data to examine how much variance each component accounts for.
+
 ``` {r carrying out PCA}
 pca <- data_active %>%
   prcomp(scale. = TRUE)
 fviz_eig(pca)
 
+```
 
+```{r PCA plotting}
+data_pca %>%
+  mutate(terms = tidytext::reorder_within(terms, 
+                                          abs(value), 
+                                          component)) %>%
+  ggplot(aes(abs(value), terms, fill = value > 0)) +
+  geom_col() +
+  facet_wrap(~component, scales = "free_y") +
+  tidytext::scale_y_reordered() +
+  scale_fill_manual(values = c("#b6dfe2", "#0A537D")) +
+  labs(
+    x = "Absolute value of contribution",
+    y = NULL, fill = "Positive?"
+  ) 
 ```
 
 
@@ -148,10 +254,28 @@ fviz_pca_var(pca,
              repel = TRUE     # Avoid text overlapping
              )
 ```
+
+
 ```{r pca}
-pca3 <- data %>%
-  select(-group, -m_f, -subject_id) %>%
-  prcomp(scale. = TRUE)
+#pca3 <- data %>%
+#  select(-group, -m_f, -subject_id) %>%
+#  prcomp(scale. = TRUE)
+```
+
+
+## 3.2 Correlation matrix
+
+
+```{r correlation matrix, include = FALSE}
+affected <- data %>%
+  filter(group == "Demented")
+
+data_corr_a <- affected %>%
+  dplyr::select(where(is.numeric)) %>%
+  correlate() %>%
+  rearrange()
+data_corr_a
+
 
 
 data_corr <- data %>%
@@ -160,6 +284,25 @@ data_corr <- data %>%
   rearrange()
 data_corr
 
+
+data_corr_a %>% network_plot(min_cor = 0)
+
+
+
+```
+
+```{r correlation matrix table}
+data_corr %>%
+  formattable(educ = color_tile("#DeF7E9", "#71CA97"))
+
+```
+
+Correlation coefficients show
+
+## 3.3 Pairwise plot matrix
+```{r pairwise plot matrix}
+
+# carrying out pairwise plot matrix
 data %>%
   select(group, where(is.numeric)) %>% 
   GGally::ggpairs(aes(color = group),
@@ -172,10 +315,6 @@ data %>%
   scale_fill_manual(values = c("darkorange","purple","cyan4"))
 
 ```
-
-## 3.2 
-
-## 3.3
 
 
 # References
