@@ -4,7 +4,7 @@ author: "Examination number: Y3868011"
 output: html_document
 bibliography: reference.bib
 ---
-# At end make sure to save all figures to the file and add all packages to read me
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,
@@ -18,18 +18,17 @@ library(tidyverse)      # tidying data and summarizing
 library(dplyr)          # tidying and merging datasets
 library(factoextra)     # for PCA visualization 
 library(GGally)         # PCA visualization
-library(corrr)          # Correlation matrix 
 library(recipes)        # PCA preparation and visualization
 library(ggplot2)        # PCA plotting
 library(tidytext)       # PCA plotting
+library(corrr)          # Correlation matrix 
 library(formattable)    # Correlation matrix table
 ```
 
 
 # 1 Introduction 
-Dementia is a syndrome and includes many different neurodegenerative brain disorders, triggered by disease of the brain and causing loss of brain function [@Dening2015-pp]. 1 in 6 people over the age of 80 have dementia, which currently there is no cure for. Symptoms of dementia vary from physical to behavioral, including agitation and depression, as well as depleting memory and cognitive function [@Cerejeira2012-qr; @Shih2014-op]. 
+Dementia is a syndrome and includes many different neurodegenerative brain disorders, triggered by disease of the brain and causing loss of brain function [@Dening2015-pp]. 1 in 6 people over the age of 80 have dementia, which currently there is no cure for. Symptoms of dementia vary from physical to behavioral, including agitation and depression, as well as the well known symptoms being depleting memory and cognitive function [@Cerejeira2012-qr; @Shih2014-op]. Researchers are interested in the differences between demented and non-demented individuals, which is where the data being used in this report stems from. The data being analyzed includes subjects with or without dementia, and also subjects who developed dementia through the course of the study. The objective of my analysis hopes to group and tidy the data gathered from the research done on these subjects. The analysis is done through **R** [@R-base] and presented using **R markdown** with a html output [@R-rmarkdown]. 
 
-Analysis is done through **R** [@R-base] and presented using **R markdown** with a html output [@R-rmarkdown]. 
 
 
 # 2 Methods
@@ -84,7 +83,8 @@ visit <- read.csv(file_visit) %>%
 The raw data was imported into **R** [@R-base] where it was tidied, filtered using the **tidyverse** package [@R-tidyverse], and combined using the **dplyr** package [@R-dplyr] into a new data set, ['data'](../data_processed/combined_data.csv). Data from the 'visit' data set was filtered out for `mri_numer` as it held the same information as the `visit` column, which was preferred to be the kept column as it is numerical so posed as a better variable for future analysis through PCA and other visualizations. 
 
 
-```{r checking structure of datasets, include = FALSE}
+```{r checking structure, include = FALSE}
+#checking data sets have any unneccessary columns and are able to be combined
 str(visit)
 # 373 obs and 9 variables
 str(patient)
@@ -112,15 +112,18 @@ write.csv(data, file = "../data_processed/combined_data.csv", row.names = FALSE)
 ```
 
 
-## 2.3 Visualisation using Principal Components Analysis (PCA)
-Principal Component Analysis was done on this data to allow visualization of the ...
-To ensure proper running of the PCA to run, all NAs were removed from the data using the pipe operator `%>%` and predictors were centered and scaled. Removal of NA values meant the data was reduced from 373 to 354 imaging sessions. Following this, the **recipe** package was used [@Recipes] to prepare the data for the PCA, this included specifying the non-numeric columns that are to be excluded from the PCA, which was assigned to a new data set `data_recipe`. Data was then tidied using the package **tidytext** [@Tidytext] into [data_pca](../data_processed/pca_data.csv), where the `value` column indicates the linear combination of weights for each variable contributing to that component, a tidier output than using the `stats::prcomp()` factor. 
+## 2.3 Pairwise Plot Matrix 
+Firstly, given that there are 12 variables (9 being numeric), a Pairwise Plot Matrix will be carried out to look at correlations between the variables. This requires using the **GGally** package [@GGally] and the GGally::ggpairs() function. The non-numeric variables will be excluded except for the 'group' variable indicating the dementia status of the subject, which will be shown through different colours. This can give an indication on relationships between variables and between the different grouping classes, and if there is any clustering.
 
-Upon visualization of the PCA components and which variables impact each the most and least, I narrowed in on the first three principal components. To do this I needed the PCA loadings from `data_pca` to be in a wider format, which can be seen in the `pca_wider` data set. Plotting also required to incorporate PCA values from `data_recipe` back in using the `recipes::juice()` function from the **recipe** package [@Recipes]. PC1 was then plotted against PC2 to visualize and confirm which components are important and see if demented subjects stood out and if so, which variables were most affecting it. From this the same plot was created but between PC2 and PC3. 
 
-Another data set, [data_active](../data_processed/active_data.csv) was created that excluded all the supplementary variables, both quantitative ans qualitative for a scree plot and a graph of the variables. 
+## 2.4 Visualisation using Principal Components Analysis (PCA)
+Principal Component Analysis was done on this data to summarize how the variables relate to one another, whilst also providing visualization of the multivariate dataset, identifying variables which can be considered as having no or little impact on the rest of the data.
 
-Plotting required the packages **factoextra**, **GGally** and **ggplot2** [@ggplot2; @factoextra; @GGally].
+To ensure proper running of the PCA, all NAs were removed from the data using the pipe operator `%>%` and predictors were centered and scaled. Removal of NA values meant the data was reduced from 373 to 354 imaging sessions. Following this, the **recipes** package was used [@Recipes] to prepare the data for the PCA, this included specifying the non-numeric columns that are to be excluded from the PCA, which was then assigned to a new data set `data_recipe`. Following on from this, data was tidied using the package **tidytext** [@Tidytext] into [data_pca](../data_processed/pca_data.csv), where the `value` column indicates the linear combination of weights for each variable contributing to that component, a tidier output than using the `stats::prcomp()` factor. 
+
+Upon visualization of the PCA, principle components with the largest epigenvalues (PC1:5) were kept for further analysis. I looked into the variables that were contributing most to these through contribution plots which required the packages **ggplot2**, **factoextra** and **tidytext** and  [@ggplot2; @factoextra; @Tidytext].
+
+I narrowed in on the first three principal components. To do this I needed the PCA loadings from `data_pca` to be in a wider format, which can be seen in the `pca_wider` data set. Plotting also required to incorporate PCA values from `data_recipe` back in using the `recipes::juice()` function from the **recipe** package [@Recipes]. PC1 was then plotted against PC2 in a biplot to visualize and confirm which components are important and see if demented subjects stood out and if so, which variables were most affecting it. From this, the same plot was created but between PC2 and PC3. 
 
 
 ``` {r pca prep, include = FALSE}
@@ -143,84 +146,173 @@ data_pca
 ```
 
 
-```{r pca prep 2, include = FALSE}
-# For the scree plot we want to only have the active quantitative variables, to do this I created a new subset called data_active
-# Arranging data for ease of creating new data frame 
-# All columns to be included in data_active to be first, then other columns to follow
-data <- data %>%
-  select(subject_id, age, mmse, e_tiv, n_wbv, asf, everything())
-# Creating the new subset
-data_active <- data[1:354, 2:6]
-#checking the data 
-head(data_active[, 1:5])
-```
-
-
 ```{r exporting modified data 2}
-# saving 'data_active' as a csv in the data_processed file
-write.csv(data_active, file = "../data_processed/active_data.csv", row.names = FALSE)
+# saving 'data_pca' as a csv in the data_processed file
 write.csv(data_pca, file = "../data_processed/pca_data.csv", row.names = FALSE)
 ```
 
 
-## 2.4 Preparing for the correlation matrix
-Correlation matrices are used...
-The package **corrr** was used to...
+## 2.5 Correlation matrix
+Correlation matrices are used to inspect the association between multiple variables at once. This data contains multiple numeric measurements that are correlated therefore, using the **corrr** package and the corrr::correlate() function [@corrr], I can analyze these correlations. This was saved as a new data set, [data_corr]("../data_processed/corr_data.csv"). This was then further visualised using a network plot. 
 
-The data contains numeric measurements that are correlated. Using the **corrr** package and the corrr::correlate() function I can analyze correlation between variables. To prepare for this I created a new data set only including the demented subjects to test if there is 
 
-## 2.5 Pairwise plot matrix 
-Using the **GGally** package [@GGally] and the GGally::ggpairs() function
-
+```{r correlation matrix prep}
+data_corr <- data %>%
+  dplyr::select(where(is.numeric)) %>%
+  correlate() %>%
+  rearrange()
+```
 
 
 # 3 Results
 
-## 3.1 Principal Components Analysis
-Figure 3.1 used the active data `data_active` to examine how much variance each principal component accounts for through a percentage. 
 
-``` {r scree plot}
-pca <- data_active %>%
-  prcomp(scale. = TRUE)
-fviz_eig(pca)
+## 3.1 Pairwise plot matrix
+There appears to be some diverseness in Socioeconomic status (ses) and normalized whole-brain volume (n_wbv) between the three groups, with the curves following different patterns. Converted subjects also appear to be older than demented and nondemented. Mini-Mental State Examination score (mmse) appears to show association between many of the variables, which can be seen by a gradient of blue to yellow to red scattering indicative of a gradient from demented to converted to nondemented. Many tiles look clustered which may indicate there are some variables having little impact on the other variables.
+
+
+```{r pairwise plot matrix}
+# carrying out pairwise plot matrix
+pairwise_plot <- data %>%
+  select(group, where(is.numeric)) %>% 
+  GGally::ggpairs(aes(color = group),
+                  upper = list(continuous = wrap("cor", size = 1.3)),
+          columns = c("e_tiv", "educ", 
+                      "visit", "age",
+                      "cdr", "mmse",
+                      "n_wbv", "ses",
+                      "asf")) +
+  scale_colour_manual(values = c("#E7B800", "#00AFBB", "tomato")) +
+  scale_fill_manual(values = c("#E7B800", "#00AFBB", "tomato"))
+
+# Saving to file
+ggsave("figures/pairwise_plot.png", 
+       plot = pairwise_plot, 
+       device = "png",
+       width = 5.8, 
+       height = 5.5,
+       units = "in",
+       dpi = 300)
+
+pairwise_plot
 ```
-
-
 <!-- figure legend -->
 
-Figure 3.1: Scree plot showing the percentage of explanation of the Principal components. Created with package **`VennDiagram`** [@VennDiagram]
+Figure 3.1: Pairwise plot matrix showing the correlations between variables. Yellow, blue and red indicate converted, demented and nondemented subjects respectively. Created with the package **GGally** and **ggplot2** [@GGally; @ggplot2].
 
 <!-- end of fig legend -->
 
 
-```{r plotting variance}
-fviz_pca_var(pca,
-             col.var = "contrib", # Color by contributions to the PC
-             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE     # Avoid text overlapping
-             )
-```
+## 3.2 Principal Components Analysis
 
-PC1 is the component that explains the most variation the data. Figure X shows PC1 is mostly about asf and ses rather than e_tiv and educ. PC2 is mostly about cdr, and not mmse.
+
+### 3.2.1 Scree plot
+A Scree plot was used to compare the sizes of the epigenvalues and determine the amount of components based on these sizes. Figure 3.2.1 uses the the data to examine how much variance each principal component accounts for through a percentage. The Scree plot shows PC1 explains roughly 30% of the explained variance. Principal components 6-9 explain less than 5% of the explained variance each.
+
+
+``` {r scree plot}
+# Using functions from the factoextra package 
+# Carrying out principal component analysis 
+pca <- data %>%
+  select(-group, -m_f, -subject_id) %>%
+  prcomp(scale. = TRUE)
+
+# visualizing 
+scree_plot <- fviz_eig(pca, 
+         barfill = "tomato",
+         barcolor = "tomato",
+         linecolor = "black")
+
+# Saving to file
+ggsave("figures/scree_plot.png", 
+       plot = scree_plot, 
+       device = "png",
+       width = 5.8, 
+       height = 5.5,
+       units = "in",
+       dpi = 300)
+
+scree_plot
+```
+<!-- figure legend -->
+
+Figure 3.2.1: Scree plot showing the percentage of explanation of the Principal components. Created with the package **factoextra** [@factoextra]
+
+<!-- end of fig legend -->
+
+
+### 3.2.2 Variable Correlation Plot
+*Figure 3.2.2* illustrates and allows observation of the variables in the PCA against PC1 and PC2. PC1 is responsible for 27.8% of the variance, and PC2 23.4%, which agrees with *Figure 3.2.1*. Estimated total intracranial volume (e_tiv) and education (educ) are the largest positive contributors to PC1. Clinical dementia rating (cdr) contributes the most to PC2, along with Socioeconomic status (ses) to a smaller degree.
+
+
+```{r variable corrrelation plot}
+# Creating a graph of the variables
+var_corr_plot <- fviz_pca_var(pca,
+             col.var = "contrib", # Colour variables by contributions to the PC
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoids text overlapping
+             )
+
+# Saving to file
+ggsave("figures/variable_corr_plot.png", 
+       plot = var_corr_plot, 
+       device = "png",
+       width = 5.8, 
+       height = 5.5,
+       units = "in",
+       dpi = 300)
+
+var_corr_plot
+```
+<!-- figure legend -->
+
+Figure 3.2.2: Plotting the variables of the PCA against PC1 and PC2. Colours indicate the degree of contribution of each variable on the principal component. Created with the package **factoextra** [@factoextra]
+
+<!-- end of fig legend -->
+
+
+### 3.2.3 Contribution Plot
+*Figure 3.2.1* indicates Principal Components 1-5 are the most responsible for the variance from the PCA. In *Figure 3.2.3* I only focused on PC1:5. This confirms the findings from *Figure 3.2.2* that PC1 is mostly impacted Estimated total intracranial volume (e_tiv) and education (educ). PC2 is mostly explained by Clinical Dementia Rating (cdr). 
+
 
 ```{r PCA visualisation}
 # Visualizing the components of the PCA. From here we can see what principal components are impacted by which variables the most
-data_pca %>%
+contribution_plot <- data_pca %>%
   mutate(terms = tidytext::reorder_within(terms, 
                                           abs(value), 
                                           component)) %>%
+  filter(component %in% paste0("PC", 1:5)) %>%
   ggplot(aes(abs(value), terms, fill = value > 0)) +
   geom_col() +
   facet_wrap(~component, scales = "free_y") +
   tidytext::scale_y_reordered() +
-  scale_fill_manual(values = c("#b6dfe2", "#0A537D")) +
+  scale_fill_manual(values = c("#00AFBB", "tomato")) +
   labs(
     x = "Absolute value of contribution",
     y = NULL, fill = "Positive?"
   ) 
-```
 
-Next I examined how the data is distributed in the plane of the first 2 components
+# Saving to file
+ggsave("figures/contribution_plot.png", 
+       plot = contribution_plot, 
+       device = "png",
+       width = 5.8, 
+       height = 5.5,
+       units = "in",
+       dpi = 300)
+
+contribution_plot
+```
+<!-- figure legend -->
+
+Figure 3.2.3: Plot showing the contribution of each variable on the Principal Components 1:5 which are known to explain the most variance within the data. Created with the package **tidytext** and **ggplot2** [@Tidytext; @ggplot2].
+
+<!-- end of fig legend -->
+
+
+### 3.2.4 A closer look into PC1, PC2 and PC3
+I examined how the data is distributed in the plane of the first two components, PC1 and PC2. Below show biplots, a combination of a score plot overlaid by a loading plot. In *Figure 3.2.4.1*, along the dimension of PC2, demented subjects stand out compared to non-demented and converted where there is a significant amount of overlap. Clinical dementia rating is shown to be important in PC2, which agrees with the figures above. Looking at *Figure 3.2.4.2*, where PC2 is being compared to PC3, it presents similar conclusions to the previous, including large divergence of the subjects with dementia and clinical dementia rating being important in PC2. The gradient of the group categories follows the PC2 dimensions in both cases; this is probably the case due to clinical dementia rating being a large factor in PC2, and also correlating with the groups, so subjects who fall under the demented category will have a higher clinical dementia rating, followed by converted, then nondemented subjects.
+
 
 ```{r plotting PC1 against PC2}
 # I need to get the pca loadings into wider format
@@ -238,10 +330,10 @@ pca_plot <-
   geom_point(aes(color = group, shape = group), 
              alpha = 0.8, 
              size = 2) +
-  scale_colour_manual(values = c("#b6dfe2","#0A537D","grey")) 
+  scale_colour_manual(values = c("tomato", "#E7B800", "#00AFBB")) 
 
 
-pca_plot +
+biplot_1 <- pca_plot +
   geom_segment(data = pca_wider,
                aes(xend = PC1, yend = PC2), 
                x = 0, 
@@ -253,11 +345,26 @@ pca_plot +
             vjust = 1,
             size = 3, 
             color = 'black') 
+
+ggsave("figures/biplot_1.png", 
+       plot = biplot_1, 
+       device = "png",
+       width = 5.8, 
+       height = 5.5,
+       units = "in",
+       dpi = 300)
+
+biplot_1
 ```
+<!-- figure legend -->
+
+Figure 3.2.4.1: A biplot comparing Principal Components one and two. The different groups are separated out as indicated in the key. Created with the package **recipes** and **ggplot2** [@Recipes; @ggplot2].
+
+<!-- end of fig legend -->
 
 
 ```{r plotting PC2 against PC3}
-pca_plot %+% 
+biplot_2 <- pca_plot %+% 
   aes(PC2, PC3) +
   geom_segment(data = pca_wider,
                aes(xend = PC2, yend = PC3), 
@@ -270,85 +377,71 @@ pca_plot %+%
             vjust = 1,
             size = 3, 
             color = 'black') 
+
+ggsave("figures/biplot_2.png", 
+       plot = biplot_2, 
+       device = "png",
+       width = 5.8, 
+       height = 5.5,
+       units = "in",
+       dpi = 300)
+
+biplot_2
 ```
+<!-- figure legend -->
+
+Figure 3.2.4.2: A biplot comparing Principal Components two and three. The different groups are separated out as indicated in the key. Created with the package **recipes** and **ggplot2** [@Recipes; @ggplot2].
+
+<!-- end of fig legend -->
 
 
+## 3.3 Correlation matrix
+The table in *Figure 3.3.1* shows the largest positive relationship between Mini-Mental State Examination score (mmse) and normalized whole-brain volume (n_wbv). I would have expected to see clinical dementia rating (cdr) having a larger effect on the other variables.
+
+The network plot in *Figure 3.3.2* uses clustering to easily illustrate which variables are closer/ further apart from one another. Atlas scaling factor (asf) and estimated total intracranial volume (e_tiv) are in close proximity and appear to have a strong negative relationship. This can also been seen to a slightly weaker extent between years of education (educ) and socioeconomic status (ses). 
 
 
-
-```{r pca}
-#pca3 <- data %>%
-#  select(-group, -m_f, -subject_id) %>%
-#  prcomp(scale. = TRUE)
-```
-
-
-## 3.2 Correlation matrix
-
-
-```{r correlation matrix, include = FALSE}
-affected <- data %>%
-  filter(group == "Demented")
-
-data_corr_a <- affected %>%
-  dplyr::select(where(is.numeric)) %>%
-  correlate() %>%
-  rearrange()
-data_corr_a
-
-
-
-data_corr <- data %>%
-  dplyr::select(where(is.numeric)) %>%
-  correlate() %>%
-  rearrange()
-data_corr
-
-
-data_corr_a %>% network_plot(min_cor = 0)
-
-
-
-```
 
 ```{r correlation matrix table}
 data_corr %>%
   formattable(educ = color_tile("#DeF7E9", "#71CA97"))
+```
+<!-- figure legend -->
 
+Figure 3.3.1: A table presenting the results from the correlation matrix. Created with the package **corrr** and **formattable** [@corrr; @formattable].
+
+<!-- end of fig legend -->
+
+
+
+```{r network plot}
+network_plot <- data_corr %>% network_plot(min_cor = 0)
+
+ggsave("figures/network_plot.png", 
+       plot = network_plot, 
+       device = "png",
+       width = 5.8, 
+       height = 5.5,
+       units = "in",
+       dpi = 300)
+
+network_plot
+```
+<!-- figure legend -->
+
+Figure 3.3.2: A network plot comparing the relationship and strenth between numerical variables. Strength of correlation displayed by the colour gradient. Created with the package **corrr** [@corrr].
+
+<!-- end of fig legend -->
+
+
+```{r exporting modified data 3}
+# saving 'pca_wider' as a csv in the data_processed file
+write.csv(pca_wider, file = "../data_processed/wider_pca.csv", row.names = FALSE)
+# saving 'data_corr' as a csv in the data_processed file
+write.csv(data_corr, file = "../data_processed/corr_data.csv", row.names = FALSE)
 ```
 
-Correlation coefficients show
-
-## 3.3 Pairwise plot matrix
-
-```{r pairwise plot matrix}
-
-# carrying out pairwise plot matrix
-data %>%
-  select(group, where(is.numeric)) %>% 
-  GGally::ggpairs(aes(color = group),
-          columns = c("e_tiv", "educ", 
-                      "visit", "age",
-                      "cdr", "mmse",
-                      "n_wbv", "ses",
-                      "asf")) +
-  scale_colour_manual(values = c("darkorange","purple","cyan4")) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"))
-
-```
 
 
 # References
-
-
-```{r references, message=FALSE, warning=FALSE, include=FALSE}
-#creating a location for references and used packages in a  .bib file 
-# knitr::write_bib(c("tidyverse", "Dening", "Cerejeira", "Shih", "Rmarkdown", "R-base"), 
-#                 width = 60, file = "references.bib")
-
-```
-
-
-
-
 

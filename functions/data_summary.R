@@ -1,6 +1,6 @@
 # This function is here to great the data summary (expand)
 
-remove(pca2)
+remove(data_active)
 str(data)
 
 
