@@ -1,9 +1,10 @@
 ---
-title: "Analysis of demented and non demented subjects"
+title: "A study into Dementia and its surrounding factors"
 author: "Examination number: Y3868011"
 output: html_document
 bibliography: reference.bib
 ---
+
 
 
 ```{r setup, include=FALSE}
@@ -25,6 +26,14 @@ library(corrr)          # Correlation matrix
 library(formattable)    # Correlation matrix table
 ```
 
+<center>
+
+![](../images/Image1.jpg)
+
+</center>
+
+
+<div style="text-align: right"> [@Bonifacio2016-vi] (https://pmj.bmj.com/content/92/1088/333) </div>
 
 # 1 Introduction 
 Dementia is a syndrome and includes many different neurodegenerative brain disorders, triggered by disease of the brain and causing loss of brain function [@Dening2015-pp]. 1 in 6 people over the age of 80 have dementia, which currently there is no cure for. Symptoms of dementia vary from physical to behavioral, including agitation and depression, as well as the well known symptoms being depleting memory and cognitive function [@Cerejeira2012-qr; @Shih2014-op]. Researchers are interested in the differences between demented and non-demented individuals, which is where the data being used in this report stems from. The data being analyzed includes subjects with or without dementia, and also subjects who developed dementia through the course of the study. The objective of my analysis hopes to group and tidy the data gathered from the research done on these subjects. The analysis is done through **R** [@R-base] and presented using **R markdown** with a html output [@R-rmarkdown]. 
@@ -59,7 +68,7 @@ Each row is a subject and data from their individual visit. There are two data f
 * mmse is the Mini-Mental State Examination score (0 = worst to 30 = best)
 * cdr indicates the clinical dementia rating
     + 0 = no dementia, 0.5 = very mild Alzheimers disease, 1 = mild Alzheimers disease, 2 = moderate Alzheimers disease
-* etiv is the estimated total intacranial volume measured in mm^{3}
+* etiv is the estimated total intacranial volume measured in mm<sup>3</sup>
 * nwbv is the normalized whole-brain volume, expressed as a percent of all voxels in the atlas-masked image that are labeled as gray or white matter by the automated tissue segmentation process
 * asf is the Atlas scaling factor (unitless). It is a computed scaling factor which transforms native-space brain and skull to the atlas target 
 
@@ -67,13 +76,13 @@ Each row is a subject and data from their individual visit. There are two data f
 ```{r data-import}
 # Creating file for the patient data
 file_patient <- "../data_raw/patient_data_raw.csv"
-# 
+
 patient <- read.csv(file_patient) %>%
   janitor::clean_names()
 
 # Creating file for visit data
 file_visit <- "../data_raw/visit_data_raw.csv"
-#
+
 visit <- read.csv(file_visit) %>%
   janitor::clean_names()
 ```
@@ -84,7 +93,7 @@ The raw data was imported into **R** [@R-base] where it was tidied, filtered usi
 
 
 ```{r checking structure, include = FALSE}
-#checking data sets have any unneccessary columns and are able to be combined
+#checking data sets have any unnecessary columns and are able to be combined
 str(visit)
 # 373 obs and 9 variables
 str(patient)
@@ -153,7 +162,7 @@ write.csv(data_pca, file = "../data_processed/pca_data.csv", row.names = FALSE)
 
 
 ## 2.5 Correlation matrix
-Correlation matrices are used to inspect the association between multiple variables at once. This data contains multiple numeric measurements that are correlated therefore, using the **corrr** package and the corrr::correlate() function [@corrr], I can analyze these correlations. This was saved as a new data set, [data_corr]("../data_processed/corr_data.csv"). This was then further visualised using a network plot. 
+Correlation matrices are used to inspect the association between multiple variables at once. This data contains multiple numeric measurements that are correlated therefore, using the **corrr** package and the corrr::correlate() function [@corrr], I can analyze these correlations. This was saved as a new data set, [data_corr](../data_processed/corr_data.csv). This was then further visualised using a network plot. 
 
 
 ```{r correlation matrix prep}
@@ -434,6 +443,7 @@ Figure 3.3.2: A network plot comparing the relationship and strenth between nume
 <!-- end of fig legend -->
 
 
+
 ```{r exporting modified data 3}
 # saving 'pca_wider' as a csv in the data_processed file
 write.csv(pca_wider, file = "../data_processed/wider_pca.csv", row.names = FALSE)
@@ -442,6 +452,28 @@ write.csv(data_corr, file = "../data_processed/corr_data.csv", row.names = FALSE
 ```
 
 
+## Word count
+
+
+```{r word count}
+# Installing wordcountaddin
+devtools::install_github("benmarwick/wordcountaddin", type = "source", dependencies = TRUE)
+# Word count for Rmd file
+wc_main_rmd <- wordcountaddin:::text_stats("Main.Rmd") [3] %>% 
+  str_extract("[0-9]+") %>% 
+  as.numeric()
+# Word count for README
+wc_readme <- wordcountaddin:::text_stats("../README.md") [3] %>% 
+  str_extract("[0-9]+") %>% 
+  as.numeric()
+```
+
+
+This document: `r wc_main_rmd`\
+README: `r wc_readme`\
+**Total: `r wc_main_rmd + wc_readme`**
+
+Calculated using **wordcountaddin** [@Marwick_undated-dd]. 
 
 # References
 
